@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component-configuration xmlns="http://tis.co.jp/nablarch/component-configuration"
+                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ../../../../../../Nablarch/resources/component-configuration.xsd">
+
+  <import file="db-default.xml"/>
+
+  <!-- DbManagerの設定 -->
+  <component name="dbManager-default" class="nablarch.core.db.transaction.SimpleDbTransactionManager"/>
+  <component name="dbManager" class="nablarch.core.db.transaction.SimpleDbTransactionManager">
+    <property name="dbTransactionName" value="manager"/>
+  </component>
+
+  <component name="tokenManager" class="nablarch.common.web.token.DbTokenManager">
+    <property name="tableName" value="TOKEN"/>
+    <property name="tokenColumnName" value="VALUE"/>
+    <property name="createdAtColumnName" value="CREATED_AT"/>
+  </component>
+
+  <component name="tokenManager2" class="nablarch.common.web.token.DbTokenManager">
+    <property name="tableName" value="DB_TOKEN"/>
+    <property name="tokenColumnName" value="VALUE_COL"/>
+    <property name="createdAtColumnName" value="CREATED_AT_COL"/>
+    <property name="dbTransactionName" value="manager"/>
+  </component>
+
+  <component name="systemTimeProvider" class="nablarch.core.date.BasicSystemTimeProvider"/>
+
+</component-configuration>
