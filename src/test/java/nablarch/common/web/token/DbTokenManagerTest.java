@@ -3,7 +3,6 @@ package nablarch.common.web.token;
 import mockit.Expectations;
 import mockit.Mocked;
 import nablarch.core.date.SystemTimeUtil;
-import nablarch.core.db.transaction.SimpleDbTransactionManager;
 import nablarch.fw.web.servlet.NablarchHttpServletRequestWrapper;
 import nablarch.fw.web.servlet.ServletExecutionContext;
 import nablarch.test.support.SystemRepositoryResource;
@@ -26,25 +25,23 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(DatabaseTestRunner.class)
 public class DbTokenManagerTest {
-
     @Rule
     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
             "nablarch/common/web/token/DbTokenManagerTest.xml");
-
     @Mocked
     SystemTimeUtil systemTimeUtil;
     @Mocked
     NablarchHttpServletRequestWrapper unused;
     @Mocked
     ServletExecutionContext unusedContext;
-
     private static final String TOKEN = "token";
 
     /**
-     * デフォルトトランザクションを使ったsaveTokenのテスト
+     * saveTokenでDBトークンテーブルのスキーマが指定されていない場合、
+     * デフォルトのスキーマにトークンが保存されること
      */
     @Test
-    public void testSaveTokenByDefaultDbTransaction() {
+    public void testSaveTokenByDefaultSchema() {
         VariousDbTestHelper.createTable(Token.class);
         new Expectations() {
             {
@@ -52,21 +49,9 @@ public class DbTokenManagerTest {
                 result = new Timestamp(0);
             }
         };
-        SimpleDbTransactionManager db = repositoryResource.getComponent("dbManager-default");
-        db.beginTransaction();
-        try {
-            DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager");
-            tokenManager.initialize();
-            tokenManager.saveToken(TOKEN, unused);
-
-            // コミット前は0件であること
-            List<Token> tokenList = VariousDbTestHelper.findAll(Token.class);
-            assertTrue(tokenList.isEmpty());
-
-            db.commitTransaction();
-        } finally {
-            db.endTransaction();
-        }
+        DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager");
+        tokenManager.initialize();
+        tokenManager.saveToken(TOKEN, unused);
 
         // 空のテーブルにinsertできていること
         List<Token> savedTokenList = VariousDbTestHelper.findAll(Token.class);
@@ -78,10 +63,11 @@ public class DbTokenManagerTest {
     }
 
     /**
-     * デフォルト外のトランザクションを使ったsaveTokenのテスト
+     * saveTokenでDBトークンテーブルのスキーマが指定された場合、
+     * 指定されたスキーマにトークンが保存されること
      */
     @Test
-    public void testSaveTokenByAnotherDbTransaction() {
+    public void testSaveTokenByAnotherSchema() {
         VariousDbTestHelper.createTable(AnotherToken.class);
         VariousDbTestHelper.setUpTable(
                 new AnotherToken("token1", new Timestamp(0)),
@@ -92,19 +78,11 @@ public class DbTokenManagerTest {
                 result = new Timestamp(0);
             }
         };
-        SimpleDbTransactionManager anotherDb = repositoryResource.getComponent("dbManager");
-        anotherDb.beginTransaction();
-        try {
-            DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager2");
-            tokenManager.initialize();
-            NablarchHttpServletRequestWrapper unused = null;
+        DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager2");
+        tokenManager.initialize();
+        NablarchHttpServletRequestWrapper unused = null;
 
-            tokenManager.saveToken(TOKEN, unused);
-
-            anotherDb.commitTransaction();
-        } finally {
-            anotherDb.endTransaction();
-        }
+        tokenManager.saveToken(TOKEN, unused);
 
         // すでにレコードのあるテーブルに追加できていること
         List<AnotherToken> savedTokenList = VariousDbTestHelper.findAll(AnotherToken.class);
@@ -116,77 +94,50 @@ public class DbTokenManagerTest {
     }
 
     /**
-     * デフォルトトランザクションを使ったisValidTokenのテスト
+     * isValidTokenでDBトークンテーブルのスキーマが指定されていない場合、
+     * デフォルトのスキーマからトークンが読み出されること
      */
     @Test
-    public void testIsValidTokenByDefaultDbTransaction() {
+    public void testIsValidTokenByDefaultSchema() {
         VariousDbTestHelper.createTable(Token.class);
         VariousDbTestHelper.setUpTable(new Token(TOKEN, new Timestamp(0)));
-        SimpleDbTransactionManager db = repositoryResource.getComponent("dbManager-default");
-        db.beginTransaction();
-        try {
-            DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager");
-            tokenManager.initialize();
-
-            assertTrue(tokenManager.isValidToken(TOKEN, unusedContext));
-
-            db.commitTransaction();
-        } finally {
-            db.endTransaction();
-        }
-        // 消費されたトークンは削除されていること
+        DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager");
+        tokenManager.initialize();
+        assertTrue(tokenManager.isValidToken(TOKEN, unusedContext));
+        // 判定に使用されたトークンは削除されていること
         List<Token> deletedTokenList = VariousDbTestHelper.findAll(Token.class);
         assertTrue(deletedTokenList.isEmpty());
     }
 
     /**
-     * デフォルト外のトランザクションを使ったsaveTokenのテスト
+     * isValidTokenでDBトークンテーブルのスキーマが指定された場合、
+     * 指定されたスキーマからトークンが読み出されること
      */
     @Test
-    public void tstIsValidTokenByAnotherDbTransaction() {
+    public void tstIsValidTokenByAnotherSchema() {
         VariousDbTestHelper.createTable(AnotherToken.class);
         VariousDbTestHelper.setUpTable(new AnotherToken(TOKEN, new Timestamp(0)));
-        SimpleDbTransactionManager anotherDb = repositoryResource.getComponent("dbManager");
-        anotherDb.beginTransaction();
-        try {
-            DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager2");
-            tokenManager.initialize();
-
-            assertTrue(tokenManager.isValidToken(TOKEN, unusedContext));
-
-            anotherDb.commitTransaction();
-        } finally {
-            anotherDb.endTransaction();
-        }
-        // 消費されたトークンは削除されていること
+        DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager2");
+        tokenManager.initialize();
+        assertTrue(tokenManager.isValidToken(TOKEN, unusedContext));
+        // 判定に使用されたトークンは削除されていること
         List<AnotherToken> deletedTokenList = VariousDbTestHelper.findAll(AnotherToken.class);
         assertTrue(deletedTokenList.isEmpty());
     }
 
     /**
-     * isValidTokenのテスト
-     * Tokenテーブルが空の場合
+     * isValidTokenでTokenテーブルが空の場合、無効なトークンと判定されること
      */
     @Test
     public void testIsValidTokenForEmptyTokenTable() {
         VariousDbTestHelper.createTable(Token.class);
-        SimpleDbTransactionManager db = repositoryResource.getComponent("dbManager-default");
-        db.beginTransaction();
-        try {
-            DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager");
-            tokenManager.initialize();
-
-            assertFalse(tokenManager.isValidToken(TOKEN, unusedContext));
-
-            db.commitTransaction();
-        } finally {
-            db.endTransaction();
-        }
+        DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager");
+        tokenManager.initialize();
+        assertFalse(tokenManager.isValidToken(TOKEN, unusedContext));
     }
 
     /**
-     * isValidTokenのテスト
-     * Tokenが空の場合
+     * isValidTokenでTokenが見つからない場合、無効なトークンと判定されること
      */
     @Test
     public void testIsValidTokenForInvalidToken() {
@@ -195,17 +146,8 @@ public class DbTokenManagerTest {
                 new Token("token1", new Timestamp(0)),
                 new Token("token2", new Timestamp(0))
         );
-        SimpleDbTransactionManager db = repositoryResource.getComponent("dbManager-default");
-        db.beginTransaction();
-        try {
-            DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager");
-            tokenManager.initialize();
-
-            assertFalse(tokenManager.isValidToken(TOKEN, unusedContext));
-
-            db.commitTransaction();
-        } finally {
-            db.endTransaction();
-        }
+        DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager");
+        tokenManager.initialize();
+        assertFalse(tokenManager.isValidToken(TOKEN, unusedContext));
     }
 }
