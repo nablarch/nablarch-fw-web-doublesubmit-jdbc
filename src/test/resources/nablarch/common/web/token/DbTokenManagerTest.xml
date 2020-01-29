@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component-configuration xmlns="http://tis.co.jp/nablarch/component-configuration"
+                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ../../../../../../Nablarch/resources/component-configuration.xsd">
+
+  <import file="db-default.xml"/>
+
+  <component name="tokenManager" class="nablarch.common.web.token.DbTokenManager" autowireType="None">
+    <property name="dbManager">
+      <component class="nablarch.core.db.transaction.SimpleDbTransactionManager"/>
+    </property>
+  </component>
+
+  <component name="tokenManager2" class="nablarch.common.web.token.DbTokenManager" autowireType="None">
+    <property name="dbTokenSchema">
+      <component class="nablarch.common.web.token.DbTokenSchema">
+        <property name="tableName" value="DB_TOKEN"/>
+        <property name="tokenName" value="VALUE_COL"/>
+        <property name="createdAtName" value="CREATED_AT_COL"/>
+      </component>
+    </property>
+    <property name="dbManager">
+      <component class="nablarch.core.db.transaction.SimpleDbTransactionManager"/>
+    </property>
+  </component>
+</component-configuration>
