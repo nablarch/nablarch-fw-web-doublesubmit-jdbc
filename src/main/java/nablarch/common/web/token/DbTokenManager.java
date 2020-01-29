@@ -63,10 +63,10 @@ public class DbTokenManager implements TokenManager, Initializable {
                 .replace("$TOKEN$", dbTokenSchema.getTokenName())
                 .replace("$CREATED_AT$", dbTokenSchema.getCreatedAtName());
 
-        String tmpdeleteSql = "  DELETE FROM $TABLE_NAME$ "
+        String tmpDeleteSql = "  DELETE FROM $TABLE_NAME$ "
                 + "  WHERE $TOKEN$ = ?";
 
-        deleteSql = tmpdeleteSql.replace("$TABLE_NAME$", dbTokenSchema.getTableName())
+        deleteSql = tmpDeleteSql.replace("$TABLE_NAME$", dbTokenSchema.getTableName())
                 .replace("$TOKEN$", dbTokenSchema.getTokenName());
     }
 
