@@ -7,7 +7,7 @@ import javax.persistence.Table;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "TOKEN")
+@Table(name = "DOUBLE_SUBMISSION")
 public class Token {
     public Token() {
     }
@@ -18,7 +18,7 @@ public class Token {
     }
 
     @Id
-    @Column(name = "VALUE", nullable = false)
+    @Column(name = "TOKEN", nullable = false)
     public String value;
 
     @Column(name = "CREATED_AT")
