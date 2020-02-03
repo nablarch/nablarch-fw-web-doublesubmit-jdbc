@@ -51,8 +51,8 @@ public class DbTokenManager implements TokenManager, Initializable {
         if (dbTokenSchema == null) {
             // デフォルトのトークンテーブルスキーマをセットする
             dbTokenSchema = new DbTokenSchema();
-            dbTokenSchema.setTableName("TOKEN");
-            dbTokenSchema.setTokenName("VALUE");
+            dbTokenSchema.setTableName("DOUBLE_SUBMISSION");
+            dbTokenSchema.setTokenName("TOKEN");
             dbTokenSchema.setCreatedAtName("CREATED_AT");
         }
         String tmpInsertSql = "  INSERT INTO $TABLE_NAME$ "
