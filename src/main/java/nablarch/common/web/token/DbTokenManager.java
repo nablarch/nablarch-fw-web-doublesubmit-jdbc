@@ -5,14 +5,13 @@ import nablarch.core.db.connection.AppDbConnection;
 import nablarch.core.db.statement.SqlPStatement;
 import nablarch.core.db.transaction.SimpleDbTransactionExecutor;
 import nablarch.core.db.transaction.SimpleDbTransactionManager;
-import nablarch.core.repository.initialization.Initializable;
 import nablarch.fw.web.servlet.NablarchHttpServletRequestWrapper;
 import nablarch.fw.web.servlet.ServletExecutionContext;
 
 /**
  * DBを使用した{@link TokenManager}実装クラス
  */
-public class DbTokenManager implements TokenManager, Initializable {
+public class DbTokenManager implements TokenManager {
     /** SimpleDbTransactionManagerのインスタンス。 */
     private SimpleDbTransactionManager dbManager;
 
@@ -47,6 +46,7 @@ public class DbTokenManager implements TokenManager, Initializable {
      * 初期化処理を行う。
      * トークンテーブル登録用、削除用のSQL文を組み立てる。
      */
+    @Override
     public void initialize() {
         if (dbTokenSchema == null) {
             // デフォルトのトークンテーブルスキーマをセットする
