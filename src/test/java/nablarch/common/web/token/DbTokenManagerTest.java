@@ -1,7 +1,5 @@
 package nablarch.common.web.token;
 
-import mockit.Expectations;
-import mockit.Mocked;
 import nablarch.core.date.SystemTimeUtil;
 import nablarch.fw.web.servlet.NablarchHttpServletRequestWrapper;
 import nablarch.fw.web.servlet.ServletExecutionContext;
@@ -11,6 +9,8 @@ import nablarch.test.support.db.helper.VariousDbTestHelper;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -19,6 +19,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * {@link DbTokenManager}のテストクラス
@@ -28,12 +29,8 @@ public class DbTokenManagerTest {
     @Rule
     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
             "nablarch/common/web/token/DbTokenManagerTest.xml");
-    @Mocked
-    SystemTimeUtil systemTimeUtil;
-    @Mocked
-    NablarchHttpServletRequestWrapper unused;
-    @Mocked
-    ServletExecutionContext unusedContext;
+    NablarchHttpServletRequestWrapper unused = mock(NablarchHttpServletRequestWrapper.class);
+    ServletExecutionContext unusedContext = mock(ServletExecutionContext.class);
     private static final String TOKEN = "token";
 
     /**
@@ -43,15 +40,14 @@ public class DbTokenManagerTest {
     @Test
     public void testSaveTokenByDefaultSchema() {
         VariousDbTestHelper.createTable(Token.class);
-        new Expectations() {
-            {
-                SystemTimeUtil.getTimestamp();
-                result = new Timestamp(0);
-            }
-        };
+        
         DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager");
-        tokenManager.initialize();
-        tokenManager.saveToken(TOKEN, unused);
+        
+        try (final MockedStatic<SystemTimeUtil> mocked = Mockito.mockStatic(SystemTimeUtil.class)) {
+            mocked.when(SystemTimeUtil::getTimestamp).thenReturn(new Timestamp(0));
+            tokenManager.initialize();
+            tokenManager.saveToken(TOKEN, unused);
+        }
 
         // 空のテーブルにinsertできていること
         List<Token> savedTokenList = VariousDbTestHelper.findAll(Token.class);
@@ -72,17 +68,17 @@ public class DbTokenManagerTest {
         VariousDbTestHelper.setUpTable(
                 new AnotherToken("token1", new Timestamp(0)),
                 new AnotherToken("token2", new Timestamp(0)));
-        new Expectations() {
-            {
-                SystemTimeUtil.getTimestamp();
-                result = new Timestamp(0);
-            }
-        };
-        DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager2");
-        tokenManager.initialize();
-        NablarchHttpServletRequestWrapper unused = null;
 
-        tokenManager.saveToken(TOKEN, unused);
+        DbTokenManager tokenManager = repositoryResource.getComponent("tokenManager2");
+        
+        try (final MockedStatic<SystemTimeUtil> mocked = Mockito.mockStatic(SystemTimeUtil.class)) {
+            mocked.when(SystemTimeUtil::getTimestamp).thenReturn(new Timestamp(0));
+
+            tokenManager.initialize();
+            NablarchHttpServletRequestWrapper unused = null;
+
+            tokenManager.saveToken(TOKEN, unused);
+        }
 
         // すでにレコードのあるテーブルに追加できていること
         List<AnotherToken> savedTokenList = VariousDbTestHelper.findAll(AnotherToken.class);
